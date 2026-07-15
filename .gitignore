@@ -1,0 +1,9 @@
+node_modules
+dist
+dist.zip
+build
+.plasmo
+*.pem
+.DS_Store
+*.log
+

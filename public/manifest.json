@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "CResume",
+  "version": "0.1.0",
+  "description": "Build a tailored, local-only resume for the job in your active tab.",
+  "permissions": ["storage", "downloads", "activeTab", "sidePanel"],
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"
+  },
+  "cross_origin_opener_policy": { "value": "same-origin" },
+  "cross_origin_embedder_policy": { "value": "require-corp" },
+  "action": { "default_title": "Open CResume" },
+  "side_panel": { "default_path": "sidepanel.html" },
+  "content_scripts": [{ "matches": ["<all_urls>"], "js": ["content.js"], "run_at": "document_idle" }],
+  "web_accessible_resources": [
+    {
+      "resources": ["busytex.wasm", "busytex.js", "sidepanel.html", "sidepanel.js", "assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
+
+
