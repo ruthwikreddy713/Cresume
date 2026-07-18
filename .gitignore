@@ -6,4 +6,8 @@ build
 *.pem
 .DS_Store
 *.log
+master.tex
+lib/master.tex
+*.personal.tex
+
 

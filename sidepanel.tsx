@@ -11,6 +11,7 @@ import type { JobContext, Selection } from "./lib/types"
 export default function SidePanel() {
   const [activeTab, setActiveTab] = useState<"tailor" | "editor">("tailor")
   const [tex, setTex] = useState("")
+  const [editorTex, setEditorTex] = useState("")
   const [selection, setSelection] = useState<Selection>({})
   const [job, setJob] = useState<JobContext>({ text: "", skills: [], companyName: "", pageTitle: "" })
   const [manualSkill, setManualSkill] = useState("")
@@ -22,6 +23,7 @@ export default function SidePanel() {
   const tree = useMemo(() => parseResume(tex), [tex])
   const activeResumeSkills = useMemo(() => activeSkills(tree, selection), [tree, selection])
   const score = useMemo(() => scoreSkills(job.skills, activeResumeSkills), [job.skills, activeResumeSkills])
+  const isDirty = useMemo(() => editorTex !== tex, [editorTex, tex])
 
   // Skill categorization
   const canonicalSet = useMemo(() => new Set(activeResumeSkills.map(s => s.toLowerCase().replace(/[^a-z0-9+#.]/g, ""))), [activeResumeSkills])
@@ -32,15 +34,16 @@ export default function SidePanel() {
     loadMaster().then(saved => {
       const source = saved || SAMPLE_TEX
       setTex(source)
+      setEditorTex(source)
       setSelection(createSelection(parseResume(source)))
     })
   }, [])
 
-  const updateTex = (value: string) => {
-    setTex(value)
-    const newTree = parseResume(value)
+  const applyMasterTex = (newTex: string, saveToDb = true) => {
+    setTex(newTex)
+    setEditorTex(newTex)
+    const newTree = parseResume(newTex)
     setSelection(current => {
-      // Keep existing selection states for unchanged IDs, auto-select new ones
       const newSel = createSelection(newTree)
       const merged: Selection = {}
       Object.keys(newSel).forEach(id => {
@@ -48,13 +51,56 @@ export default function SidePanel() {
       })
       return merged
     })
-    saveMaster(value)
+    if (saveToDb) {
+      saveMaster(newTex)
+    }
   }
 
-  const loadTemplate = () => {
-    if (confirm("Reset to default Ruthwik Master LaTeX template? Any custom edits to master.tex will be overwritten.")) {
-      updateTex(SAMPLE_TEX)
-      setStatus({ text: "Restored Ruthwik Master LaTeX template.", type: "success" })
+  const handleSaveMasterPermanently = () => {
+    if (!editorTex.trim()) {
+      return setStatus({ text: "Cannot save an empty Master TeX document.", type: "error" })
+    }
+    const confirmed = confirm(
+      "Are you sure you want to PERMANENTLY update your Master LaTeX Resume template?\n\nThis will overwrite your saved master.tex in local extension storage."
+    )
+    if (confirmed) {
+      applyMasterTex(editorTex, true)
+      setStatus({ text: "✅ Master LaTeX template updated permanently in local storage!", type: "success" })
+    }
+  }
+
+  const exportMasterTexFile = () => {
+    const blob = new Blob([editorTex || tex], { type: "text/x-tex" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "master.tex"
+    a.click()
+    URL.revokeObjectURL(url)
+    setStatus({ text: "Downloaded master.tex to your machine.", type: "success" })
+  }
+
+  const handleImportMasterFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const content = event.target?.result as string
+      if (content) {
+        if (confirm(`Import '${file.name}' and save it as your permanent Master LaTeX template?`)) {
+          applyMasterTex(content, true)
+          setStatus({ text: `Successfully imported and saved '${file.name}' as master template!`, type: "success" })
+        }
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ""
+  }
+
+  const loadSampleTemplate = () => {
+    if (confirm("Reset Master LaTeX to the generic open-source sample template? Any unsaved edits will be replaced.")) {
+      applyMasterTex(SAMPLE_TEX, true)
+      setStatus({ text: "Reset to default open-source sample template.", type: "success" })
     }
   }
 
@@ -422,23 +468,63 @@ export default function SidePanel() {
         ) : (
           /* MASTER TEX EDITOR TAB */
           <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-semibold text-slate-400">Master LaTeX Source Code</span>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-300">Master LaTeX Source</span>
+                {isDirty && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-950 text-amber-300 border border-amber-800">
+                    Unsaved Edits
+                  </span>
+                )}
+              </div>
               <button
-                onClick={loadTemplate}
-                className="text-xs text-cyan-400 hover:text-cyan-300 underline font-medium"
+                onClick={loadSampleTemplate}
+                className="text-xs text-slate-400 hover:text-slate-200 underline font-medium"
               >
-                Reset to Ruthwik Template
+                Reset to Sample
               </button>
             </div>
 
             <textarea
-              value={tex}
-              onChange={e => updateTex(e.target.value)}
+              value={editorTex}
+              onChange={e => setEditorTex(e.target.value)}
               className="w-full h-96 bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-xs text-slate-200 focus:outline-none focus:border-cyan-500/50 leading-relaxed resize-y shadow-inner"
               spellCheck={false}
-              placeholder="Paste your annotated LaTeX source code here..."
+              placeholder="Paste or write your Master LaTeX source here..."
             />
+
+            {/* Action Bar for Master TeX */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={handleSaveMasterPermanently}
+                className={`py-2.5 px-3 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  isDirty
+                    ? "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-md shadow-cyan-500/20"
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700"
+                }`}
+              >
+                💾 Save as Permanent Master
+              </button>
+
+              <button
+                onClick={exportMasterTexFile}
+                className="py-2.5 px-3 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-300 transition flex items-center justify-center gap-1.5"
+              >
+                📥 Export master.tex
+              </button>
+            </div>
+
+            <div className="pt-1 flex justify-between items-center text-xs">
+              <label className="cursor-pointer text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+                📤 Import master.tex from computer
+                <input
+                  type="file"
+                  accept=".tex,.txt"
+                  onChange={handleImportMasterFile}
+                  className="hidden"
+                />
+              </label>
+            </div>
 
             <div className="text-[11px] text-slate-400 bg-slate-900 border border-slate-800 p-3 rounded-lg space-y-1">
               <p className="font-bold text-slate-300">Tagging System Format:</p>
