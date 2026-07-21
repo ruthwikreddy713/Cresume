@@ -2,7 +2,7 @@
 
 > **100% On-Device Chrome Extension for Tailoring LaTeX Resumes & Auto-Applying**
 
-ResuMatch is a privacy-first, local-only Chrome Extension designed to store a master LaTeX resume, parse job descriptions on the active tab in real-time, and provide granular block-level toggling of projects, experience, and bullet points. It features a real-time **Match Score Engine** and automates WebAssembly LaTeX compilation, smart naming (`Ruthwik-resume-{companyName}.pdf`), and synthetic DOM file injection into ATS application forms.
+ResuMatch is a privacy-first, local-only Chrome Extension designed to store a master LaTeX resume, parse job descriptions on the active tab in real-time, and provide granular block-level toggling of projects, experience, and bullet points. It features a real-time **Match Score Engine** and automates WebAssembly LaTeX compilation, smart naming (`{CandidateName}-resume-{companyName}.pdf`), and synthetic DOM file injection into ATS application forms.
 
 ---
 
@@ -11,7 +11,7 @@ ResuMatch is a privacy-first, local-only Chrome Extension designed to store a ma
 - **🎯 Real-Time Match Score Engine**: Scrapes the active tab's job description locally, extracts required skill keywords, and continuously calculates your resume match score percentage as you check/uncheck resume blocks.
 - **🏷️ Master LaTeX Mapping System**: Annotates your master `.tex` source with custom comment tags (`% <section>`, `% <block>`, `% <bullet>`). Unchecked items are stripped dynamically without breaking LaTeX syntax.
 - **⚡ 100% On-Device Wasm Compilation**: Uses Siglum (TeX Live 2025 in WebAssembly) directly in browser memory. No resume data or job descriptions are ever sent to an external server.
-- **📥 Smart Naming & Downloads**: Generates custom PDF files named `Ruthwik-resume-{companyName}.pdf` directly via the Chrome Downloads API.
+- **📥 Smart Naming & Downloads**: Generates custom PDF files named `{CandidateName}-resume-{companyName}.pdf` dynamically via the Chrome Downloads API.
 - **🤖 Automated ATS File Injection**: Bypasses manual file picker dialogs by constructing a synthetic `DataTransfer` object to auto-populate `<input type="file" accept=".pdf">` on application forms.
 - **📝 Real-Time Master LaTeX Editor**: Full live code editor in the side panel with auto-saving to browser IndexedDB via Dexie.js.
 
@@ -26,13 +26,13 @@ Annotate your master `.tex` document using lightweight LaTeX comments:
   \section*{EXPERIENCE}
   \vspace{-0.5em}\hrule\vspace{0.5em}
 
-  % <block id="oracle" title="Senior Software Engineer — Oracle">
+  % <block id="tech_corp" title="Senior Software Engineer — TechCorp">
   \begin{tabular*}{\textwidth}{@{}l@{\extracolsep{\fill}}r@{}}
-    \textbf{Senior Software Engineer} $|$ \textit{Oracle} & Hyderabad, India \\
+    \textbf{Senior Software Engineer} $|$ \textit{TechCorp} & San Francisco, CA \\
   \end{tabular*}
   \begin{itemize}[leftmargin=0.15in, label={$\bullet$}]
-    % <bullet id="oracle_nudge" skills="Java, OracleSQL, Microservices">
-    \item \textbf{Nudge Plan Configuration:} Co-designed and implemented automation framework...
+    % <bullet id="techcorp_pipeline" skills="Java, Spring Boot, Microservices">
+    \item \textbf{High-Throughput Pipeline:} Co-designed and implemented automated event pipeline...
     % </bullet>
   \end{itemize}
   % </block>
@@ -76,4 +76,5 @@ npm run build
 ## 📜 License
 
 MIT License © [Ruthwik Reddy](https://github.com/ruthwikreddy713)
+
 

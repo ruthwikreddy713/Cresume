@@ -165,8 +165,9 @@ export default function SidePanel() {
       return setStatus({ text: "No tagged LaTeX sections found. Use % <section> tags in Master LaTeX.", type: "error" })
     }
 
+    const candidateName = extractCandidateName(tex)
     const company = safeName(job.companyName || "Company")
-    const filename = `Ruthwik-resume-${company}.pdf`
+    const filename = candidateName ? `${candidateName}-resume-${company}.pdf` : `Resume-${company}.pdf`
     setLastFilename(filename)
     setIsCompiling(true)
     setStatus({ text: "Compiling LaTeX with WebAssembly...", type: "info" })
@@ -548,10 +549,16 @@ export default function SidePanel() {
 createRoot(document.getElementById("root")!).render(<SidePanel />)
 
 const safeName = (name: string) => name.replace(/[^a-z0-9]+/gi, "-").replace(/(^-|-$)/g, "") || "Company"
+const extractCandidateName = (tex: string): string => {
+  const match = tex.match(/\\begin\{center\}[\s\S]*?(?:\\Huge|\\huge|\\Large)?\s*\\textbf\{([^}]+)\}/i) || tex.match(/\\textbf\{([^}]+)\}/i)
+  if (!match || !match[1]) return ""
+  return safeName(match[1])
+}
 const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader()
   reader.onload = () => resolve(reader.result as string)
   reader.onerror = reject
   reader.readAsDataURL(blob)
 })
+
 
