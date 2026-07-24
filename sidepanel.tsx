@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client"
 import "./style.css"
 import { loadMaster, saveMaster } from "./lib/db"
 import { activeSkills, compileSource, createSelection, parseResume } from "./lib/parser"
-import { compilePdf } from "./lib/pdf"
+import { compilePdf, getPdfPageCount } from "./lib/pdf"
 import { extractSkills, scoreSkills } from "./lib/skills"
 import { SAMPLE_TEX } from "./lib/sample"
 import type { JobContext, Selection } from "./lib/types"
@@ -19,6 +19,7 @@ export default function SidePanel() {
   const [status, setStatus] = useState({ text: "Scan a job description or select resume blocks to get started.", type: "info" })
   const [lastPdfUrl, setLastPdfUrl] = useState<string | null>(null)
   const [lastFilename, setLastFilename] = useState<string>("")
+  const [pageCount, setPageCount] = useState<number | null>(null)
 
   const tree = useMemo(() => parseResume(tex), [tex])
   const activeResumeSkills = useMemo(() => activeSkills(tree, selection), [tree, selection])
@@ -184,6 +185,10 @@ export default function SidePanel() {
       return
     }
 
+    // Determine PDF page count
+    const pages = await getPdfPageCount(blob)
+    setPageCount(pages)
+
     setIsCompiling(false)
     const url = URL.createObjectURL(blob)
     setLastPdfUrl(url)
@@ -204,10 +209,17 @@ export default function SidePanel() {
         .catch(() => ({ ok: false, reason: "Page doesn't have an accessible file upload form." }))
     }
 
-    setStatus({
-      text: `${filename} compiled & downloaded! ${injection.ok ? "Attached to application form." : injection.reason}`,
-      type: injection.ok ? "success" : "warning"
-    })
+    if (pages > 1) {
+      setStatus({
+        text: `⚠️ WARNING: ${filename} is ${pages} pages long! Resumes should be 1 page max. Deselect some bullet points or blocks to fit on 1 page.`,
+        type: "warning"
+      })
+    } else {
+      setStatus({
+        text: `✅ ${filename} compiled & downloaded! (${pages} page - Optimal length). ${injection.ok ? "Attached to application form." : injection.reason}`,
+        type: injection.ok ? "success" : "warning"
+      })
+    }
   }
 
   return (
@@ -435,6 +447,25 @@ export default function SidePanel() {
             }`}>
               {status.text}
             </div>
+
+            {/* Page Count Warning / Badge */}
+            {pageCount !== null && (
+              <div className={`p-3 rounded-lg border text-xs flex items-center justify-between font-semibold transition-all ${
+                pageCount === 1
+                  ? "bg-emerald-950/60 border-emerald-500/50 text-emerald-300"
+                  : "bg-rose-950/80 border-rose-500/80 text-rose-200 shadow-lg shadow-rose-950/50"
+              }`}>
+                <div className="flex items-center gap-2">
+                  <span>{pageCount === 1 ? "📄 Page Count:" : "⚠️ Length Alert:"}</span>
+                  <span className="font-extrabold">{pageCount} {pageCount === 1 ? "Page (Optimal Length)" : `Pages (${pageCount - 1} page over limit)`}</span>
+                </div>
+                {pageCount > 1 && (
+                  <span className="text-[10px] bg-rose-900/80 px-2 py-0.5 rounded text-rose-100 font-bold border border-rose-700">
+                    Deselect blocks to fit 1 page
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Main Action Button */}
             <button

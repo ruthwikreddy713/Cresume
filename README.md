@@ -9,6 +9,7 @@ ResuMatch is a privacy-first, local-only Chrome Extension designed to store a ma
 ## ✨ Features
 
 - **🎯 Real-Time Match Score Engine**: Scrapes the active tab's job description locally, extracts required skill keywords, and continuously calculates your resume match score percentage as you check/uncheck resume blocks.
+- **📄 Page Count Detection & 1-Page Warning**: Automatically calculates compiled PDF page count in real time and alerts you if your tailored resume exceeds 1 page so you can deselect less relevant bullets/blocks.
 - **🏷️ Master LaTeX Mapping System**: Annotates your master `.tex` source with custom comment tags (`% <section>`, `% <block>`, `% <bullet>`). Unchecked items are stripped dynamically without breaking LaTeX syntax.
 - **⚡ 100% On-Device Wasm Compilation**: Uses Siglum (TeX Live 2025 in WebAssembly) directly in browser memory. No resume data or job descriptions are ever sent to an external server.
 - **📥 Smart Naming & Downloads**: Generates custom PDF files named `{CandidateName}-resume-{companyName}.pdf` dynamically via the Chrome Downloads API.

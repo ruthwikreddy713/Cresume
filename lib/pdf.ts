@@ -46,3 +46,28 @@ export async function compilePdf(source: string): Promise<Blob> {
   // Copy into an ArrayBuffer-backed view; the engine may return a SharedArrayBuffer view.
   return new Blob([Uint8Array.from(result.pdf)], { type: "application/pdf" })
 }
+
+/** Fast in-memory PDF page count calculator */
+export async function getPdfPageCount(pdfBlob: Blob): Promise<number> {
+  try {
+    const buffer = await pdfBlob.arrayBuffer()
+    const text = new TextDecoder("latin1").decode(new Uint8Array(buffer))
+
+    // Match /Count N in root /Pages tree
+    const rootPagesMatch = text.match(/\/Type\s*\/Pages[\s\S]*?\/Count\s+(\d+)/)
+    if (rootPagesMatch && rootPagesMatch[1]) {
+      const count = parseInt(rootPagesMatch[1], 10)
+      if (!isNaN(count) && count > 0) return count
+    }
+
+    // Fallback: count individual /Type /Page objects
+    const pageMatches = text.match(/\/Type\s*\/Page\b/g)
+    if (pageMatches && pageMatches.length > 0) {
+      return pageMatches.length
+    }
+  } catch (e) {
+    console.warn("Could not determine PDF page count:", e)
+  }
+  return 1
+}
+
