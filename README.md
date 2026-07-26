@@ -42,6 +42,32 @@ Annotate your master `.tex` document using lightweight LaTeX comments:
 
 ---
 
+## 🏗️ Architecture Overview
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        ResuMatch Chrome Extension                       │
+├──────────────────────────┬─────────────────────────────────────────────┤
+│   Active Tab Context     │            Sidepanel UI (React)             │
+│  ┌────────────────────┐  │  ┌──────────────────┐ ┌──────────────────┐  │
+│  │ Job Description    │──┼─>│ Skill Matcher    │ │ Master TeX       │  │
+│  │ Scraper & ATS Form │  │  │ & 1-Page Check   │ │ IndexedDB Editor │  │
+│  └────────────────────┘  │  └────────┬─────────┘ └────────┬─────────┘  │
+└──────────────────────────┴───────────┼────────────────────┼────────────┘
+                                       ▼                    ▼
+                           ┌─────────────────────────────────────────────┐
+                           │   In-Memory WebAssembly TeX Compiler        │
+                           │     (@siglum/engine pdflatex Wasm)          │
+                           └───────────────────┬─────────────────────────┘
+                                               ▼
+                           ┌─────────────────────────────────────────────┐
+                           │  Generated PDF + Smart Filename Export      │
+                           │   ({CandidateName}-resume-{company}.pdf)    │
+                           └─────────────────────────────────────────────┘
+```
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Framework**: Chrome Extension Manifest V3 + Vite + React 18 + TypeScript
